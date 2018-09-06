@@ -13,13 +13,19 @@ class NowPlayingViewController: UIViewController,UITableViewDataSource {
     @IBOutlet weak var tableView: UITableView!
     var globalmovie: [[String:Any]] = []
     var refreshcontrol:UIRefreshControl!
+    var activityIndicator:UIActivityIndicatorView = UIActivityIndicatorView()
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        activityIndicator.center = self.view.center
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.gray
+        tableView.addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        
         refreshcontrol = UIRefreshControl()
         refreshcontrol.addTarget(self, action: #selector(NowPlayingViewController.didPullToRefresh(_:)), for: .valueChanged)
-        
         tableView.insertSubview(refreshcontrol, at:0)
         tableView.dataSource = self
     }
@@ -30,6 +36,7 @@ class NowPlayingViewController: UIViewController,UITableViewDataSource {
     
     func didPullToRefresh(_ refreshControl: UIRefreshControl){
         fetchMovies()
+        activityIndicator.stopAnimating()
     }
     
     func fetchMovies(){
