@@ -22,7 +22,8 @@ class NowPlayingViewController: UIViewController,UITableViewDataSource {
         activityIndicator.hidesWhenStopped = true
         activityIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.gray
         tableView.addSubview(activityIndicator)
-        
+        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.estimatedRowHeight = 50
         refreshcontrol = UIRefreshControl()
         fetchMovies()
         activityIndicator.stopAnimating()
