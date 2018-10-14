@@ -11,13 +11,15 @@ import AlamofireImage
 
 class NowPlayingViewController: UIViewController,UITableViewDataSource {
     @IBOutlet weak var tableView: UITableView!
-    var globalmovie: [[String:Any]] = []
+//    var globalmovie: [[String:Any]] = []
     var refreshcontrol:UIRefreshControl!
     var activityIndicator:UIActivityIndicatorView = UIActivityIndicatorView()
-    
+    //create instance of movie
+    var movies:[Movie] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        fetchMovies()
         activityIndicator.center = self.view.center
         activityIndicator.hidesWhenStopped = true
         activityIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.gray
@@ -25,7 +27,7 @@ class NowPlayingViewController: UIViewController,UITableViewDataSource {
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
         refreshcontrol = UIRefreshControl()
-        fetchMovies()
+        
         activityIndicator.stopAnimating()
 
         refreshcontrol.addTarget(self, action: #selector(NowPlayingViewController.didPullToRefresh(_:)), for: .valueChanged)
@@ -46,52 +48,32 @@ class NowPlayingViewController: UIViewController,UITableViewDataSource {
     
     func fetchMovies(){
         activityIndicator.startAnimating()
-        let url = URL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=a07e22bc18f5cb106bfe4cc1f83ad8ed")!
-        let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
-        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
-        let task = session.dataTask(with: request) { (data, response, error) in
-            if let error = error{
-                print (error.localizedDescription)
-            }
-            if let data = data{
-                let dataDictionary = try! JSONSerialization.jsonObject(with: data, options: []) as! [String:Any]
-                let movies = dataDictionary["results"] as! [[String:Any]]
-                self.globalmovie = movies
+        MovieApiManager().nowPlayingMovies { (movies: [Movie]?, error: Error?) in
+            if let movies = movies {
+                self.movies = movies
                 self.tableView.reloadData()
-                self.refreshcontrol.endRefreshing()
+                self.activityIndicator.stopAnimating()
             }
         }
-        task.resume()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         
         let cell = sender as! UITableViewCell
         if let indexPath = tableView.indexPath(for: cell){
-            let movie = globalmovie[indexPath.row]
+            let movie = movies[indexPath.row]
             let detailViewController = segue.destination as! DetailViewController
             detailViewController.movie = movie
         }
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.globalmovie.count
+        return self.movies.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell", for: indexPath) as! MovieCell
-        let movie = self.globalmovie[indexPath.row]
-        let title = movie["title"] as! String
-        let overview = movie["overview"] as! String
-        let postImageURL = movie["poster_path"] as! String
-        let baseURL:String = "https://image.tmdb.org/t/p/w500"
-        
-        let fullURL = URL(string: baseURL + postImageURL)!
-        
-        cell.titleLabel.text = title
-        cell.overviewLabel.text = overview
-        cell.posterimageView.af_setImage(withURL: fullURL)
-        
+        cell.movie=self.movies[indexPath.row]
         return cell
     }
     
